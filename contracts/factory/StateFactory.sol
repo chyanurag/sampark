@@ -11,25 +11,34 @@ contract StateFactory is AStates {
     mapping(State state => address governmentContract) private s_stateToGovernment;
     mapping(State state => address proposalContract) private s_stateToProposal;
 
-    event ResidentGovernmentAndProposalDeployedForState(
+    event ResidentGovernmentAndProposalContractsDeployedForState(
         State indexed state,
         address indexed residentContract,
         address indexed governmentContract,
         address proposalContract
     );
 
-    error ResidentAndGovernmentContractsAlreadyDeployed(address residentContract, address governmentContract);
+    error ResidentGovernmentAndProposalContractsAlreadyDeployed(
+        address residentContract,
+        address governmentContract,
+        address proposalContract
+    );
 
-    function deployResidentAndGovernmentForState(
+    function deployResidentGovernmentAndProposalForState(
         State _state,
         string memory _stateName,
         string memory _stateSymbol
     ) external {
         address residentContract = s_stateToResident[_state];
         address governmentContract = s_stateToGovernment[_state];
+        address proposalContract = s_stateToProposal[_state];
 
-        if (residentContract != address(0) || governmentContract != address(0))
-            revert ResidentAndGovernmentContractsAlreadyDeployed(residentContract, governmentContract);
+        if (residentContract != address(0) && governmentContract != address(0) && proposalContract != address(0))
+            revert ResidentGovernmentAndProposalContractsAlreadyDeployed(
+                residentContract,
+                governmentContract,
+                proposalContract
+            );
         else {
             Government newGovernmentContract = new Government(_state, _stateName, _stateSymbol);
             Resident newResidentContract = new Resident(_state, _stateName, _stateSymbol);
@@ -37,12 +46,14 @@ contract StateFactory is AStates {
 
             newGovernmentContract.setResidentContract(address(newResidentContract));
             newResidentContract.setGovernmentContract(address(newGovernmentContract));
+            newProposalContract.setResidentContract(address(newResidentContract));
+            newProposalContract.setGovernmentContract(address(newGovernmentContract));
 
             s_stateToResident[_state] = address(newResidentContract);
             s_stateToGovernment[_state] = address(newGovernmentContract);
             s_stateToProposal[_state] = address(newProposalContract);
 
-            emit ResidentGovernmentAndProposalDeployedForState(
+            emit ResidentGovernmentAndProposalContractsDeployedForState(
                 _state,
                 address(newResidentContract),
                 address(newGovernmentContract),

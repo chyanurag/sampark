@@ -8,10 +8,12 @@ import {Resident} from "./Resident.sol";
 import {Utility} from "./abstract/Utility.sol";
 
 contract Government is AStates, Utility, ERC721URIStorage, Ownable {
-    bool private s_isResidentContractSet;
     State private immutable i_state;
-    uint256 private s_nextTokenId;
+
+    bool private s_isResidentContractSet;
     Resident private s_residentContract;
+
+    uint256 private s_nextTokenId;
     mapping(address official => bool isVerified) private s_isVerified;
 
     event ResidentContractSet(address indexed residentContract);
@@ -63,19 +65,19 @@ contract Government is AStates, Utility, ERC721URIStorage, Ownable {
         emit OfficialVerified(_official, _tokenId);
     }
 
-    function isVerifiedOfficial(address _official) external view returns (bool) {
-        return s_isVerified[_official];
-    }
-
-    function getNextTokenId() external view returns (uint256) {
-        return s_nextTokenId + 1;
-    }
-
     function getState() external view returns (State) {
         return i_state;
     }
 
     function getResidentContract() external view returns (Resident) {
         return s_residentContract;
+    }
+
+    function getNextTokenId() external view returns (uint256) {
+        return s_nextTokenId + 1;
+    }
+
+    function isVerifiedOfficial(address _official) external view returns (bool) {
+        return s_isVerified[_official];
     }
 }

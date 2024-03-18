@@ -8,9 +8,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Utility} from "./abstract/Utility.sol";
 
 contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
-    bool private s_isGovernmentContractSet;
     State private immutable i_state;
+
+    bool private s_isGovernmentContractSet;
     Government private s_governmentContract;
+
     uint256 private s_nextTokenId;
     mapping(address resident => bool isVerified) private s_isVerified;
 
@@ -33,8 +35,8 @@ contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
         string memory _stateName,
         string memory _stateSymbol
     ) ERC721(_stateName, _stateSymbol) Ownable(msg.sender) {
-        s_isGovernmentContractSet = false;
         i_state = _state;
+        s_isGovernmentContractSet = false;
         s_nextTokenId = 0;
     }
 
@@ -64,15 +66,19 @@ contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
         emit ResidentVerified(_resident, _tokenId);
     }
 
+    function getState() external view returns (State) {
+        return i_state;
+    }
+
+    function getGovernmentContract() external view returns (Government) {
+        return s_governmentContract;
+    }
+
     function getNextTokenId() external view returns (uint256) {
         return s_nextTokenId + 1;
     }
 
     function isVerifiedResident(address _resident) external view returns (bool) {
         return s_isVerified[_resident];
-    }
-
-    function getGovernmentContract() external view returns (Government) {
-        return s_governmentContract;
     }
 }

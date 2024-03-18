@@ -10,13 +10,16 @@ contract Proposal is AStates, Ownable {
     struct ProposalDetails {
         address resident;
         uint256 votes;
+        bool isResolved;
         string detailsUri;
     }
 
     State private immutable i_state;
+
     Resident private s_residentContract;
     Government private s_governmentContract;
     uint256 private s_areResidentAndGovernmentContractSet;
+
     uint256 private s_proposalCount;
     ProposalDetails[] private s_proposals;
     mapping(uint256 index => mapping(address resident => bool agrees)) private s_residentSupportsProposal;
@@ -26,12 +29,15 @@ contract Proposal is AStates, Ownable {
     event ProposalCreated(address indexed resident, uint256 indexed index);
     event VotedForProposal(address indexed resident, uint256 indexed index);
     event RevokedVotedForProposal(address indexed resident, uint256 indexed index);
+    event ProposalUpdatedByOfficial(address indexed official, uint256 indexed index, string newProposalDataUri);
+    event ProposalResolved(address indexed official, uint256 index);
 
     error ALreadySet();
     error NotVerifiedResident(address resident);
     error AlreadyVoted(uint256 index, address resident);
     error IndexOutOfBounds(uint256 index);
     error NotAlreadyVoted(uint256 index, address resident);
+    error NotVerifiedOfficial(address official);
 
     constructor(State _state) Ownable(msg.sender) {
         i_state = _state;
@@ -41,6 +47,11 @@ contract Proposal is AStates, Ownable {
 
     modifier onlyVerifiedResident() {
         if (!s_residentContract.isVerifiedResident(msg.sender)) revert NotVerifiedResident(msg.sender);
+        _;
+    }
+
+    modifier onylVerifiedOfficial() {
+        if (!s_governmentContract.isVerifiedOfficial(msg.sender)) revert NotVerifiedOfficial(msg.sender);
         _;
     }
 
@@ -70,6 +81,7 @@ contract Proposal is AStates, Ownable {
         ProposalDetails memory newProposal = ProposalDetails({
             resident: msg.sender,
             votes: 0,
+            isResolved: false,
             detailsUri: _proposalUri
         });
         s_proposals.push(newProposal);
@@ -93,12 +105,19 @@ contract Proposal is AStates, Ownable {
         emit RevokedVotedForProposal(msg.sender, _index);
     }
 
-    function getProposalCount() external view returns (uint256) {
-        return s_proposalCount;
+    function updateProposal(
+        uint256 _index,
+        string memory _newProposalDataUri
+    ) external onylVerifiedOfficial onlyValidIndex(_index) {
+        s_proposals[_index].detailsUri = _newProposalDataUri;
+
+        emit ProposalUpdatedByOfficial(msg.sender, _index, _newProposalDataUri);
     }
 
-    function getProposal(uint256 _index) external view onlyValidIndex(_index) returns (ProposalDetails memory) {
-        return s_proposals[_index];
+    function markProposalAsResolved(uint256 _index) external onylVerifiedOfficial onlyValidIndex(_index) {
+        s_proposals[_index].isResolved = true;
+
+        emit ProposalResolved(msg.sender, _index);
     }
 
     function getState() external view returns (State) {
@@ -111,5 +130,13 @@ contract Proposal is AStates, Ownable {
 
     function getGovernmentContract() external view returns (Government) {
         return s_governmentContract;
+    }
+
+    function getProposalCount() external view returns (uint256) {
+        return s_proposalCount;
+    }
+
+    function getProposal(uint256 _index) external view onlyValidIndex(_index) returns (ProposalDetails memory) {
+        return s_proposals[_index];
     }
 }
