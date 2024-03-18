@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {AStates} from "./abstract/AStates.sol";
+import {IStates} from "./interfaces/IStates.sol";
 import {Government} from "./Government.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Resident} from "./Resident.sol";
 
-contract Proposal is AStates, Ownable {
+contract Proposal is IStates, Ownable {
     struct ProposalDetails {
         address resident;
         uint256 votes;
@@ -39,7 +39,7 @@ contract Proposal is AStates, Ownable {
     error NotAlreadyVoted(uint256 index, address resident);
     error NotVerifiedOfficial(address official);
 
-    constructor(State _state) Ownable(msg.sender) {
+    constructor(State _state) Ownable(tx.origin) {
         i_state = _state;
         s_areResidentAndGovernmentContractSet = 2;
         s_proposalCount = 0;

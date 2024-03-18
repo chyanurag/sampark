@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {AStates} from "./abstract/AStates.sol";
+import {IStates} from "./interfaces/IStates.sol";
 import {ERC721URIStorage, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {Government} from "./Government.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Utility} from "./abstract/Utility.sol";
 
-contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
+contract Resident is IStates, Utility, ERC721URIStorage, Ownable {
     State private immutable i_state;
 
     bool private s_isGovernmentContractSet;
@@ -24,6 +24,7 @@ contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
     error NotOwnerOfTokenId(address resident, uint256 tokenId);
     error GovernmentContractAlreadySet(address governmentContract);
     error ResidentNotVerified(address resident);
+    error AlreadyRegistered();
 
     modifier onlyVerifiedOfficial() {
         if (s_governmentContract.isVerifiedOfficial(msg.sender)) revert NotVerifiedOfficial(msg.sender);
@@ -34,7 +35,7 @@ contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
         State _state,
         string memory _stateName,
         string memory _stateSymbol
-    ) ERC721(_stateName, _stateSymbol) Ownable(msg.sender) {
+    ) ERC721(_stateName, _stateSymbol) Ownable(tx.origin) {
         i_state = _state;
         s_isGovernmentContractSet = false;
         s_nextTokenId = 0;
@@ -49,6 +50,7 @@ contract Resident is AStates, Utility, ERC721URIStorage, Ownable {
     }
 
     function registerAsResident(string memory _residentDataUri) external {
+        if (balanceOf(msg.sender) > 0) revert AlreadyRegistered();
         uint256 tokenId = ++s_nextTokenId;
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _residentDataUri);
