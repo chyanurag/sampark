@@ -1,0 +1,18 @@
+{
+    "scripts": {
+        "lint-sol": "npx solhint contracts/**/*.sol --ignore-path .solhintignore",
+        "lint-js-scripts": "npx eslint scripts/*.js",
+        "lint-js-test": "npx eslint test/unit/*.js",
+        "test": "npx hardhat test"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+        "@openzeppelin/contracts": "^5.0.0",
+        "dotenv": "^16.3.1",
+        "eslint": "^8.56.0",
+        "eslint-plugin-mocha": "^10.2.0",
+        "hardhat": "^2.18.2",
+        "prettier": "^3.0.3",
+        "solhint": "^4.0.0"
+    }
+}
