@@ -57,7 +57,11 @@ async function deployProtocol() {
         await verify(await residentDeploymentHelper.getAddress(), []);
         await verify(await governmentDeploymentHelper.getAddress(), []);
         await verify(await proposalDeploymentHelper.getAddress(), []);
-        await verify(await statefactory.getAddress(), []);
+        await verify(await statefactory.getAddress(), [
+            await residentDeploymentHelper.getAddress(),
+            await governmentDeploymentHelper.getAddress(),
+            await proposalDeploymentHelper.getAddress(),
+        ]);
     }
 
     return {
