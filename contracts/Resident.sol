@@ -27,7 +27,7 @@ contract Resident is IStates, Utility, ERC721URIStorage, Ownable {
     error AlreadyRegistered();
 
     modifier onlyVerifiedOfficial() {
-        if (s_governmentContract.isVerifiedOfficial(msg.sender)) revert NotVerifiedOfficial(msg.sender);
+        if (!s_governmentContract.isVerifiedOfficial(msg.sender)) revert NotVerifiedOfficial(msg.sender);
         _;
     }
 
