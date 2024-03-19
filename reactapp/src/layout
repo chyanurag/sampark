@@ -1,0 +1,20 @@
+We only have three graph endpoints
+
+user will have to connect their account to do anything
+once they are connected
+send them to register page
+    - check if they are registered or not
+, we can check if they are reigstered or not using graph
+if they are registered as resident
+    - send them to residentarea
+if they are registered as official
+    - send them to official area
+else
+    - ask to register themselves as a resident or official
+
+proposal
+    - title
+    - description
+    - location
+    - priority
+    - phone
