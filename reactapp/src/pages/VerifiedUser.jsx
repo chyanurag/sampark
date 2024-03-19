@@ -15,10 +15,15 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
     const [resolved, setResolved] = useState(false);
     const [address, setAddress] = useState(null);
     const [voted, setVoted] = useState(false);
+    const dispatch = useNotification();
 
     const getVoted = gql`
     {
         votedForProposals{
+            resident
+            index
+        }
+        revokedVotedForProposals{
             resident
             index
         }
@@ -27,8 +32,32 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
 
     const { loading, data, error } = useQuery(getVoted);
 
+    const downVoteHandler = async () => {
+        try{
+            await contract.revokeVoteForProposal(index);
+            dispatch({
+                type: 'success',
+                title: 'Downvote sucessful',
+                message: 'Revoked vote suceessfully',
+                position: 'topR'
+            })
+        }
+        catch(err){
+            dispatch({
+                type: 'error',
+                title: 'Something went wrong',
+                message: String(err),
+                GeolocationPosition: 'topR'
+            })
+        }
+    }
+
     const voteHandler = async () => {
-        await contract.voteForProposal(index);
+        try{
+            await contract.voteForProposal(index);
+        }catch(err){
+
+        }
     }
 
     const populateData = async () => {
@@ -47,6 +76,33 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
         setAddress(account);
     }
 
+    const checkIfVoted = () => {
+        let resp = data['votedForProposals'];
+        let revoked = data['revokedVotedForProposals'];
+        let voteCount = 0;
+        let revokeCount = 0;
+        for(let r of resp){
+            if(r.index == index){
+                if(r.resident == String(address).toLowerCase()){
+                    voteCount++;
+                }
+            }
+        }
+        for(let r of revoked){
+            if(r.index == index){
+                if(r.resident == String(address).toLowerCase()){
+                    revokeCount++;
+                }
+            }
+        }
+        let check = voteCount > revokeCount;
+        if(check){
+            return <Button onClick={downVoteHandler} p='5' backgroundColor={'#FF0000'} outline={'none'} color={'white'}  fontSize='20' m='10'>Revoke Vote</Button>
+        } else {
+            return <Button onClick={voteHandler} p='5' backgroundColor={'#4cbb17'} fontSize='20' m='10'>Vote</Button>
+        }
+    }
+
     useEffect(() => {
         populateData()
     }, [])
@@ -59,7 +115,7 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
                 <Spacer />
                 <Spacer />
                 <Text fontSize="20" fontFamily="Jetbrains Mono">{votes}</Text>
-                {showVote ? loading ? <Text>Checking</Text> : <Button m='5' mx='20' p='5' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={voteHandler}>Vote</Button> : null}
+                {showVote ? loading ? <Text>Checking</Text> : checkIfVoted(): null}
             </Flex>
         </Box>
     )

@@ -20,192 +20,6 @@ const User = ({ verificationHandler, account }) => {
     )
 }
 
-const Proposal = ({ contract, index, handleClick }) => {
-    const [title, setTitle] = useState('Loading...')
-    const [desc, setDesc] = useState('Loading...');
-    const [loc, setLoc] = useState('Loading...');
-    const [votes, setVotes] = useState('Loading...');
-    const [resolved, setResolved] = useState(false);
-    const getVoted = gql`
-    {
-        votedForProposals{
-            resident
-            index
-        }
-    }
-    `
-
-    const { loading, data, error } = useQuery(getVoted);
-
-    const voteHandler = async () => {
-        await contract.voteForProposal(index);
-    }
-
-    const populateData = async () => {
-        const data = await contract.getProposal(index);
-        setVotes(String(data['1']));
-        setResolved(data['2']);
-        let details = data['3'];
-        let response = await fetch('https://ipfs.io/ipfs/'+details)
-        let jdetails = await response.json();
-        setTitle(jdetails['title'])
-        setDesc(jdetails['description'])
-        setLoc(jdetails['location'])
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
-        setAddress(account);
-    }
-
-    useEffect(() => {
-        populateData()
-    }, [])
-
-    return (
-        <Box p='20' m='20' border='2px solid black' onClick={() => handleClick(index)} fontSize='30' className='proposal' backgroundColor={resolved ? '#AAFF00' : '#FF474D'} color={resolved ? 'black' : 'white'}>
-            <Flex align={'center'}>
-                <Text fontSize="20" fontFamily="Jetbrains Mono">{title}</Text>
-                <Spacer />
-                <Spacer />
-                <Spacer />
-                <Text fontSize="20" fontFamily="Jetbrains Mono">{votes}</Text>
-            </Flex>
-        </Box>
-    )
-}
-
-const UserProps = ({ props, handleClick }) => {
-    const [contract, setContract] = useState(null);
-
-    const populateContract = async () => {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const temp = new ethers.Contract('dai.tokens.ethers.eth', PROPOSAL_ABI, signer);
-        const contract = temp.attach(PROPOSAL_ADDRESS);
-        setContract(contract);
-    }
-    
-    useEffect(() => {
-        populateContract();
-    }, [])
-
-
-    return(
-        <Box m='30' p='20'>
-            {contract ? props.map((pr, idx) => <Proposal handleClick={handleClick} key={idx} contract={contract} index={pr}/>) : <Text fontFamily={'Jetbrains Mono'}>fetching data</Text>}
-        </Box>
-    )
-}
-
-const ProposalList = ({ handleClick }) => {
-    const [address, setAddress] = useState('');
-
-    const populateAddress = async () => {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        setAddress(address);
-    }
-    
-    useEffect(() => {
-        populateAddress()
-    }, [])
-    
-    const proposalsQuery = gql`
-    {
-        proposalCreateds{
-            resident
-            index
-        }
-    }
-    `;
-
-    const { loading, data, error } = useQuery(proposalsQuery)
-
-    const loadProposals = () => {
-        const userProps = [];
-        let proposals = data['proposalCreateds'];
-        for(let prop of proposals){
-            userProps.push(prop.index);
-        }
-        return <UserProps handleClick={handleClick} address={address} props={userProps}/>
-    }
-
-    return(
-        <>
-            {loading ? <Center my='50'><PuffLoader size={150}/></Center> : loadProposals()}
-        </>
-    )
-}
-
-const SingleProposal = ({ index, handleBack }) => {
-    const [title, setTitle] = useState('Loading...')
-    const [desc, setDesc] = useState('Loading...');
-    const [loc, setLoc] = useState('Loading...');
-    const [votes, setVotes] = useState('Loading...');
-    const [resolved, setResolved] = useState(false);
-    const [contract, setContract] = useState(null);
-    const [address, setAddress] = useState(null);
-    const dispatch = useNotification();
-
-    const voteHandler = async () => {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const temp = new ethers.Contract('dai.tokens.ethers.eth', PROPOSAL_ABI, signer);
-        const contract = temp.attach(PROPOSAL_ADDRESS);
-        try{
-            await contract?.voteForProposal(index);
-            dispatch({
-                type: 'success',
-                title: 'Vote successfull!',
-                message: 'Voted sucessfully!',
-                position: 'topR'
-            })
-        } catch (err) {
-            dispatch({
-                type: 'error',
-                title: 'Vote unsuccessfull!',
-                message: 'Already Voted!',
-                position: 'topR'
-            })
-        }
-    }
-
-    const populateData = async () => {
-        const provider = new ethers.BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        setAddress(address);
-        const temp = new ethers.Contract('dai.tokens.ethers.eth', PROPOSAL_ABI, signer);
-        const contract = temp.attach(PROPOSAL_ADDRESS);
-        const data = await contract.getProposal(index);
-        setVotes(String(data['1']));
-        setResolved(data['2']);
-        let details = data['3'];
-        let response = await fetch('https://ipfs.io/ipfs/'+details)
-        let jdetails = await response.json();
-        setTitle(jdetails['title'])
-        setDesc(jdetails['description'])
-        setLoc(jdetails['location'])
-    }
-
-    useEffect(() => {
-        populateData()
-    }, [])
-
-    return (
-        <Box p='20' m='20' border='2px solid black'>
-            <Text fontSize='30' fontFamily={'Jetbrains Mono'}>{title}</Text>
-            <Text fontSize="20" fontFamily={'Jetbrains Mono'}>{desc}</Text>
-            <Flex m='20' my='20' align={'center'}>
-                <Button m='5' mx='20' p='5' my='' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={handleBack}>Back</Button>
-                <Button m='5' mx='20' p='5' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={voteHandler}>Vote</Button>
-                <Text fontSize="20" fontFamily="Jetbrains Mono">{votes}</Text>
-            </Flex>
-        </Box>
-    )
-}
-
 const UserList = ({ verificationHandler, accounts }) => {
     return(
         <>
@@ -214,9 +28,29 @@ const UserList = ({ verificationHandler, accounts }) => {
     )
 }
 
+const SingleProposal = () => {
+    return(
+        <h1>Single proposal</h1>
+    )
+}
+
+const Proposal = () => {
+    return(
+        <>
+        </>
+    )
+}
+
+const ProposalList = () => {
+    return(
+        <h1>Proposal list</h1>
+    )
+}
+
 const VerifiedOfficial = ({ address }) => {
     const [showUsers, setShowUsers] = useState(true);
     const [singleProposal, setSingleProposal] = useState(null);
+    const [showProposals, setShowProposals] = useState(null);
     const dispatch = useNotification();
     
     const unVerifiedUsers = gql`
@@ -281,18 +115,14 @@ const VerifiedOfficial = ({ address }) => {
         let accounts = Array.from(residents, ([address, tokenId]) => ({ address, tokenId }));
         return <UserList verificationHandler={verifyUser} accounts={accounts}/>
     }
-    const clickHandler = (i) => {
-        setSinglePro(i)
-        setShowUsers(false);
-    }
 
     return (
         <Box>
             <Box>
-                <Button onClick={() => {setShowUsers(true);setShowProposals(false);}}>Show Users</Button>
-                <Button onClick={() => {setShowUsers(false); setShowProposals(true)}}>Show Proposals</Button>
+                <Button onClick={() => {setShowUsers(true);setShowProposals(false);setSingleProposal(null)}}>Show Users</Button>
+                <Button onClick={() => {setShowUsers(false); setShowProposals(true);setSingleProposal(null)}}>Show Proposals</Button>
             </Box>
-            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : showUsers ? checkUnverifiedUsers() : singleProposal ? <SingleProposal handleBack={() => setSingleProposal(null)} index={singleProposal}/> : <ProposalList handleClick={clickHandler} />}
+            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : singleProposal ? <SingleProposal /> : showUsers ?  checkUnverifiedUsers() : <ProposalList />}
         </Box>
     )
 }
