@@ -121,7 +121,7 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
     )
 }
 
-const UserProps = ({ props, handleClick }) => {
+const UserProps = ({ created, props, handleClick }) => {
     const [contract, setContract] = useState(null);
 
     const populateContract = async () => {
@@ -138,8 +138,13 @@ const UserProps = ({ props, handleClick }) => {
 
 
     return(
-        <Box m='30' p='20'>
-            {contract ? props.map((pr, idx) => <Proposal handleClick={handleClick} key={idx} contract={contract} index={pr}/>) : <Text fontFamily={'Jetbrains Mono'}>fetching data</Text>}
+        <Box>
+            <Flex justify={'space-evenly'}>
+                <Text>Total proposals : {created}</Text>
+            </Flex>
+            <Box m='30' p='20'>
+                {contract ? props.map((pr, idx) => <Proposal handleClick={handleClick} key={idx} contract={contract} index={pr}/>) : <Text fontFamily={'Jetbrains Mono'}>fetching data</Text>}
+            </Box>
         </Box>
     )
 }
@@ -172,12 +177,15 @@ const ProposalList = ({ handleClick }) => {
     const loadProposals = () => {
         const userProps = [];
         let proposals = data['proposalCreateds'];
+        let created = 0;
+        let resolved = 0;
         for(let prop of proposals){
             if(prop.resident.toLowerCase() == address.toLowerCase()){
                 userProps.push(prop.index);
+                created++;
             }
         }
-        return <UserProps handleClick={handleClick} address={address} props={userProps}/>
+        return <UserProps created={created} handleClick={handleClick} address={address} props={userProps}/>
     }
 
     return(
@@ -193,7 +201,7 @@ const NewProposal = ({ handleBack }) => {
     const dispatch = useNotification();
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
-    const [tele, setTele] = useState('');
+    const [phone, setPhone] = useState('');
     const [propLoc, setPropLoc] = useState('');
     const [uploading, setUploading] = useState(false);
 
@@ -253,7 +261,7 @@ const NewProposal = ({ handleBack }) => {
         const hash = await uploadJson({
             title: title,
             description: desc,
-            phone: tele,
+            phone: phone,
             location: propLoc
         })
         try{
@@ -282,7 +290,7 @@ const NewProposal = ({ handleBack }) => {
         <Box p='20' m='50' width='80%'>
             <Input width='80%' fontSize='30' p='5' m='10' fontFamily='Jetbrains Mono' required={true} type="text" placeholder="Enter title" value={title} onChange={e => setTitle(e.target.value)}/><br/>
             <Textarea rows='10' cols='86' fontSize='20' p='5'  m='10' ontFamily='Jetbrains Mono' required={true} onChange={e => setDesc(e.target.value)} value={desc} type="text" placeholder="Describe your issue"/><br/>
-            <Input fontSize='30' p='5'  m='10' ontFamily='Jetbrains Mono' required type='tel' placeholder='Phone number' value={tele} onChange={e => setTele(e.target.value)}/><br/>
+            <Input fontSize='30' p='5'  m='10' ontFamily='Jetbrains Mono' required type='tel' placeholder='Phone number' value={phone} onChange={e => setPhone(e.target.value)}/><br/>
             <Select iconSize={'0'} fontSize='30'  m='10' variant='filled' placeholder='Select Your Location' ontFamily='Jetbrains Mono' onChange={e => setPropLoc(e.target.value)} value={propLoc}>
                 <option value='Kandivali'>Kandivali</option>
                 <option value='Mira road'>Mira road</option>
@@ -347,6 +355,7 @@ const SingleProposal = ({ index, handleBack }) => {
     const [contract, setContract] = useState(null);
     const [address, setAddress] = useState(null);
     const dispatch = useNotification();
+    const [phone, setPhone] = useState('');
 
     const voteHandler = async () => {
         const provider = new ethers.BrowserProvider(window.ethereum);
@@ -387,6 +396,7 @@ const SingleProposal = ({ index, handleBack }) => {
         setTitle(jdetails['title'])
         setDesc(jdetails['description'])
         setLoc(jdetails['location'])
+        setPhone(jdetails['phone'])
     }
 
     useEffect(() => {
@@ -396,6 +406,8 @@ const SingleProposal = ({ index, handleBack }) => {
     return (
         <Box p='20' m='20' border='2px solid black'>
             <Text fontSize='30' fontFamily={'Jetbrains Mono'}>{title}</Text>
+            <Text fontSize='20' fontFamily={'Jetbrains Mono'}>Location : {loc}</Text>
+            <Text fontSize='20' fontFamily={'Jetbrains Mono'}>Phone : {phone}</Text>
             <Text fontSize="20" fontFamily={'Jetbrains Mono'}>{desc}</Text>
             <Flex m='20' my='20' align={'center'}>
                 <Button m='5' mx='20' p='5' my='' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={handleBack}>Back</Button>
