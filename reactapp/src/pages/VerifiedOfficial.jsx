@@ -30,13 +30,13 @@ const UserList = ({ verificationHandler, accounts }) => {
 
 const SingleProposal = ({ index }) => {
     return(
-        <>
-            <h1>Single proposal of index {index}</h1>
-        </>
+        <Box>
+            <Text>Single proposal of index {index}</Text>
+        </Box>
     )
 }
 
-const Proposal = ({ handleClick, contract, index}) => {
+const Proposal = ({ handleClick, contract, index }) => {
     const [title, setTitle] = useState('Loading...');
     const [desc, setDesc] = useState('Loading...');
     const [phone, setPhone] = useState('Loading...');
@@ -79,7 +79,7 @@ const Proposal = ({ handleClick, contract, index}) => {
     }
 
     return(
-        <Box mx='100' onClick={handleClick}>
+        <Box mx='100' onClick={() => handleClick(index)}>
             <Flex mx='100' border='1px solid black' p='20' align={'center'} backgroundColor={resolved ? '#AAFF00' : '#FF474D'} m='20' justify={'space-evenly'}>
                 <Text fontSize="20">
                     {title}
@@ -214,7 +214,7 @@ const VerifiedOfficial = ({ address }) => {
                 <Button backgroundColor={'#051C2C'} fontSize='20' color={'white'} m='20' p='10' onClick={() => {setShowUsers(true);setShowProposals(false);setSingleProposal(null)}}>Show Users</Button>
                 <Button backgroundColor={'#051C2C'}  fontSize='20' color={'white'} m='20' p='10' onClick={() => {setShowUsers(false); setShowProposals(true);setSingleProposal(null)}}>Show Proposals</Button>
             </Center>
-            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : singleProposal ? <SingleProposal index={idx} /> : showUsers ?  checkUnverifiedUsers() : <ProposalList handleClick={handleClick} />}
+            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : singleProposal ? <SingleProposal index={idx} /> : showUsers ?  checkUnverifiedUsers() : <ProposalList handleClick={(idx) => setSingleProposal(idx)} />}
         </Box>
     )
 }
