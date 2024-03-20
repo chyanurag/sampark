@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Input, Box, Button, Center, Textarea, Select, Text, Spacer, Flex } from '@chakra-ui/react'
 import { useNotification } from '@web3uikit/core'
 import { ethers } from 'ethers';
-import { PROPOSAL_ABI, PROPOSAL_ADDRESS } from '../constants'
+import { PROPOSAL_ABI, PROPOSAL_ADDRESS, RESIDENT_ABI, RESIDENT_ADDRESS } from '../constants'
 import { uploadJson } from '../utils/ipfs'
 import { useQuery, gql } from '@apollo/client'
 import PuffLoader from 'react-spinners/PuffLoader'
+import { Contract } from '@web3uikit/icons';
 
 const Proposal = ({ contract, index, showVote, handleClick }) => {
     const [title, setTitle] = useState('Loading...')
@@ -97,9 +98,9 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
         }
         let check = voteCount > revokeCount;
         if(check){
-            return <Button onClick={downVoteHandler} p='5' backgroundColor={'#FF0000'} outline={'none'} color={'white'}  fontSize='20' m='10'>Revoke Vote</Button>
+            return <Button onClick={downVoteHandler} p='5' backgroundColor={'#FF0000'} outline={'none'} color={'white'} borderRadius={'50'} px='20' border={'none'} fontSize='20' m='10'>Revoke Vote</Button>
         } else {
-            return <Button onClick={voteHandler} p='5' backgroundColor={'#4cbb17'} fontSize='20' m='10'>Vote</Button>
+            return <Button onClick={voteHandler} p='5' backgroundColor={'lightgreen'} fontSize='20' m='10' color={''} borderRadius={'50'} px='20' border='none'>Vote</Button>
         }
     }
 
@@ -108,7 +109,7 @@ const Proposal = ({ contract, index, showVote, handleClick }) => {
     }, [])
 
     return (
-        <Box p='20' m='20' border='2px solid black' onClick={() => handleClick(index)} fontSize='30' className='proposal' backgroundColor={resolved ? '#AAFF00' : '#FF474D'} color={resolved ? 'black' : 'white'}>
+        <Box p='20' m='20' border='1px solid black' borderRadius={'12'} onClick={() => handleClick(index)} fontSize='30' className='proposal'>
             <Flex align={'center'}>
                 <Text fontSize="20" fontFamily="Jetbrains Mono">{title}</Text>
                 <Spacer />
@@ -190,7 +191,7 @@ const ProposalList = ({ handleClick }) => {
 
     return(
         <>
-            <Text fontSize="40" m='10' p='10' fontFamily='Jetbrains Mono' textDecoration={'underline'}><Center>Here are your proposals</Center></Text>
+            <Text fontSize="40" m='10' p='10' fontFamily='Jetbrains Mono' textDecoration={'none'}><Center>Here are your proposals</Center></Text>
             {loading ? <Center my='50'><PuffLoader size={150}/></Center> : loadProposals()}   
         </>
     )
@@ -237,7 +238,7 @@ const NewProposal = ({ handleBack }) => {
             })
             return;
         }
-        if(!checkTele(tele)){
+        if(!checkTele(phone)){
             dispatch({
                 type: 'error',
                 message: 'Please input a valid phone number',
@@ -288,24 +289,52 @@ const NewProposal = ({ handleBack }) => {
 
     return(
         <Box p='20' m='50' width='80%'>
-            <Input width='80%' fontSize='30' p='5' m='10' fontFamily='Jetbrains Mono' required={true} type="text" placeholder="Enter title" value={title} onChange={e => setTitle(e.target.value)}/><br/>
-            <Textarea rows='10' cols='86' fontSize='20' p='5'  m='10' ontFamily='Jetbrains Mono' required={true} onChange={e => setDesc(e.target.value)} value={desc} type="text" placeholder="Describe your issue"/><br/>
-            <Input fontSize='30' p='5'  m='10' ontFamily='Jetbrains Mono' required type='tel' placeholder='Phone number' value={phone} onChange={e => setPhone(e.target.value)}/><br/>
-            <Select iconSize={'0'} fontSize='30'  m='10' variant='filled' placeholder='Select Your Location' ontFamily='Jetbrains Mono' onChange={e => setPropLoc(e.target.value)} value={propLoc}>
+            <Input width='80%' fontSize='18' p='5' m='10' fontFamily='Jetbrains Mono' required={true} type="text" placeholder="Enter complaint title" value={title} onChange={e => setTitle(e.target.value)}/><br/>
+            <Textarea rows='10' cols='86' fontSize='18' p='5'  m='10' ontFamily='Jetbrains Mono' required={true} onChange={e => setDesc(e.target.value)} value={desc} type="text" placeholder="Describe your issue"/><br/>
+            <Input fontSize='18' p='5'  m='10' fontFamily='Jetbrains Mono' required type='tel' placeholder='Phone number' value={phone} onChange={e => setPhone(e.target.value)}/><br/>
+            <Select iconSize={'0'} fontSize='18'  m='10' variant='filled' placeholder='Select Your Location' ontFamily='Jetbrains Mono' onChange={e => setPropLoc(e.target.value)} value={propLoc}>
                 <option value='Kandivali'>Kandivali</option>
                 <option value='Mira road'>Mira road</option>
                 <option value='Andheri'>Andheri</option>
             </Select>
-            <Button disabled={uploading} onClick={handleCreate} onMouseOut={e => e.target.style.color='white'} onMouseOver={(e) => e.target.style.color='grey'} fontFamily='Jetbrains Mono' fontSize='20' p='10' m='10' backgroundColor='#051C2C' color='white'>Add Proposal</Button><br/>
-            <Button onClick={handleBack} onMouseOut={e => e.target.style.color='white'} onMouseOver={(e) => e.target.style.color='grey'} fontFamily='Jetbrains Mono' fontSize='20' p='10' m='10' backgroundColor='#051C2C' color='white'>Go Back</Button>
+            <Flex>
+                <Button onClick={handleCreate} fontFamily='Jetbrains Mono' fontSize='18' p='10' m='10' backgroundColor='lightblue' borderRadius={'50'} px='20' border={'none'}><Text color='#111111'>Add Proposal</Text></Button><br/>
+                <Button onClick={handleBack} fontFamily='Jetbrains Mono' fontSize='18' p='10' m='10' borderRadius={'50'} px='50' backgroundColor={'lightblue'} border={'none'}><Text color='#111111'>Go Back</Text></Button>
+            </Flex>
         </Box>
     )
 }
 
-const UserStats = ({}) => {
+const UserStats = ({ address }) => {
+
+    const [name, setName] = useState('....')
+
+    const fetchUri = async () => {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const temp = new ethers.Contract('dai.tokens.ethers.eth', RESIDENT_ABI, signer);
+        const contract = temp.attach(RESIDENT_ADDRESS);
+        let tokenId = 0;
+        for(let i = 1; i < 30; i++){
+            const owner = await contract.ownerOf(i);
+            if(String(owner).toLowerCase() == String(address).toLowerCase()){
+                tokenId = i;
+                break;
+            }
+        }
+        const uri = await contract.tokenURI(tokenId);
+        let resp = await fetch('https://ipfs.io/ipfs/' + uri)
+        let jsonResp = await resp.json();
+        setName(String(jsonResp['name']).split(' ')[0])
+    }
+
+
+    useEffect(() => {
+        fetchUri();
+    }, [])
     return(
         <Box p='10' m='20'>
-            <Text fontSize="50" fontFamily={'Jetbrains Mono'}>Welcome!</Text>
+            <Text fontSize="50" fontFamily={'Jetbrains Mono'}>Welcome {name}!</Text>
         </Box>
     )
 }
@@ -404,15 +433,15 @@ const SingleProposal = ({ index, handleBack }) => {
     }, [])
 
     return (
-        <Box p='20' m='20' border='2px solid black'>
-            <Text fontSize='30' fontFamily={'Jetbrains Mono'}>{title}</Text>
-            <Text fontSize='20' fontFamily={'Jetbrains Mono'}>Location : {loc}</Text>
-            <Text fontSize='20' fontFamily={'Jetbrains Mono'}>Phone : {phone}</Text>
-            <Text fontSize="20" fontFamily={'Jetbrains Mono'}>{desc}</Text>
-            <Flex m='20' my='20' align={'center'}>
-                <Button m='5' mx='20' p='5' my='' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={handleBack}>Back</Button>
-                <Button m='5' mx='20' p='5' fontSize='20' fontFamily={'Jetbrains Mono'} backgroundColor={'#051C2C'} color={'white'} onClick={voteHandler}>Vote</Button>
-                <Text fontSize="20" fontFamily="Jetbrains Mono">{votes}</Text>
+        <Box m='20' p='20' border='2px solid black'>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'}><b>{title}</b></Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color='grey'>Votes : {votes}</Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color='grey'>Location : {loc}</Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color={'grey'}>Phone : {phone}</Text>
+            <Text fontSize="18" fontFamily={'Jetbrains Mono'}>{desc}</Text>
+            <Flex align={'center'} my='20'>
+                <Button p='5' fontSize='18' mr='10' fontFamily={'Jetbrains Mono'} border={'none'} backgroundColor={'lightblue'} borderRadius={'50'} px='20' color={'#111111'} onClick={handleBack}>Back</Button>
+                <Button p='5' fontSize='18' ml='10' mr='10' fontFamily={'Jetbrains Mono'} border={'none'} backgroundColor={'lightblue'} borderRadius={'50'} px='20' color={'#11111'} onClick={voteHandler}>Vote</Button>
             </Flex>
         </Box>
     )
@@ -424,14 +453,7 @@ const VerifiedUser = ({address}) => {
     const [singlePro, setSinglePro] = useState(null);
 
     const dispatch = useNotification();
-    useEffect(() => {
-        dispatch({
-            type: 'success',
-            message: 'You have been verified succesfully!',
-            title: 'Verification Sucess',
-            position: 'topR'
-        })
-    }, [])
+
 
     const clickHandler = (i) => {
         setSinglePro(i)
@@ -444,8 +466,8 @@ const VerifiedUser = ({address}) => {
         <Flex p='5' m='20' align='center'>
             <UserStats address={address}/>
             <Spacer />
-            <Button onClick={() => {setCreateProposal(true);setCommunity(false); setSinglePro(null)}} onMouseOut={e => e.target.style.color='white'} onMouseOver={(e) => e.target.style.color='grey'} fontFamily='Jetbrains Mono' fontSize='20' p='10' m='10' backgroundColor='#051C2C' color='white'>Create Proposal</Button>
-            <Button onClick={() => {setCreateProposal(false); setCommunity(true); setSinglePro(null)}} onMouseOut={e => e.target.style.color='white'} onMouseOver={(e) => e.target.style.color='grey'} fontFamily='Jetbrains Mono' fontSize='20' p='10' m='10' backgroundColor='#051C2C' color='white'>View Community</Button>
+            <Button onClick={() => {setCreateProposal(true);setCommunity(false); setSinglePro(null)}}  borderRadius={'50'} border={'none'} px='20' fontFamily='Jetbrains Mono' fontSize='20' py='10' m='10' backgroundColor='lightblue' color='#111111'>Create Proposal</Button>
+            <Button onClick={() => {setCreateProposal(false); setCommunity(true); setSinglePro(null)}}  fontFamily='Jetbrains Mono' fontSize='20' py='10' px='20' m='10' borderRadius={'50'} backgroundColor='lightblue' color='#11111' border={'none'}>View Community</Button>
         </Flex>
         {
             createProposal ?

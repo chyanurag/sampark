@@ -1,13 +1,16 @@
 import { gql, useQuery } from '@apollo/client'
 import VerifiedUser from './VerifiedUser'
 import PuffLoader from 'react-spinners/PuffLoader'
-import { Center, Text, Box } from '@chakra-ui/react'
+import { Center, Text, Box, Image } from '@chakra-ui/react'
+import ImageFour from '../images/img4.svg'
 
 const PendingMessage = () => {
     return (
-        <Center m='20'>
-            <Text>Your account has not yet been verified</Text>
-        </Center>
+        <Box m='20'>
+            <Center><Image width={380} height={380} m='40' src={ImageFour}/></Center>
+            <Center><Text fontFamily={'Jetbrains Mono'} fontSize='20'>Your account has not yet been verified</Text></Center>
+            
+        </Box>
     )
 }
 
@@ -26,7 +29,7 @@ const UserResident = ({ address }) => {
     {
         let verifications = data['residentVerifieds']
         for(let v of verifications){
-            if(v.resident == address){
+            if(String(v.resident).toLowerCase() == String(address).toLowerCase()){
                 return <VerifiedUser address={address}/>
             }
         }

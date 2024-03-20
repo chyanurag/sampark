@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 
 const Header = () => {
     return (
-        <Box p='30' backgroundColor={'#201547'} color={'rgb(0 188 225)'}>
-            <Flex>
-                <Text fontSize='40' fontFamily={'Jetbrains Mono, monosopce'}><Link to='/' style={{textDecoration: 'none'}}>Sampark</Link></Text>
+        <Box p='20' backgroundColor={'#111111'} color={'rgb(0 188 225)'}>
+            <Flex align={'center'}>
+                <Text fontSize='24' fontFamily={'Jetbrains Mono, monosopce'} color={'#ff0000'}><Link to='/' style={{textDecoration: 'none', color: 'lightblue'}}>Sampark</Link></Text>
                 <Spacer />
-                <Text></Text>
+                <Text fontSize={'18'}>Maharashtra (MH)</Text>
             </Flex>
         </Box>
     )

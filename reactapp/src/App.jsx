@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
-import { Box, Text, Flex, Button, Center } from '@chakra-ui/react'
+import { Box, Text, Image, Flex, Button, Center } from '@chakra-ui/react'
 import { gql, useQuery } from '@apollo/client'
 import UserResident from './pages/UserResident'
 import UserOfficial from './pages/UserOfficial'
 import Header from './components/Header'
 import PuffLoader from 'react-spinners/PuffLoader'
 import RegistrationForm from './pages/RegistrationForm'
+import ImageThree from './images/img3.svg'
+import Modal from 'react-modal'
+
 
 const CheckIfUser = ({ address }) => {
     const queryUserExists = gql`
@@ -40,6 +43,7 @@ const CheckIfUser = ({ address }) => {
     )
 }
 
+Modal.setAppElement('#modal')
 
 function App() {
     const [address, setAddress] = useState(null);
@@ -97,7 +101,7 @@ function App() {
     return (
         <Box>
             <Header />
-            {address ? <CheckIfUser address={address}/> : <button onClick={connectWalletHandler}>Connect Metamask</button>}
+            {address ? <CheckIfUser address={address}/> : <Center><Image src={ImageThree} width={380} height={380} m='50'/><Button backgroundColor={'lightblue'} color={'#111111'} onMouseOver={e => e.target.style.cursor = 'pointer'} borderRadius={'50'} border={'none'} p='20' m='20' py='10' fontSize='18' onClick={connectWalletHandler}>Connect Metamask</Button></Center>}
         </Box>
     )
 }

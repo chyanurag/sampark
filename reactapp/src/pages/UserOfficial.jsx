@@ -1,13 +1,16 @@
 import { gql, useQuery } from '@apollo/client'
 import VerifiedOfficial from './VerifiedOfficial'
-import { Text, Center } from '@chakra-ui/react'
+import { Text, Center, Image, Box } from '@chakra-ui/react'
 import PuffLoader from 'react-spinners/PuffLoader'
+import ImageFour from '../images/img4.svg'
 
 const PendingMessage = () => {
     return (
-        <Center>
-            <Text>You are not verified yet</Text>
-        </Center>
+        <Box m='20'>
+            <Center><Image width={380} height={380} m='40' src={ImageFour}/></Center>
+            <Center><Text fontFamily={'Jetbrains Mono'} fontSize='20'>Your account has not yet been verified</Text></Center>
+            
+        </Box>
     )
 }
 

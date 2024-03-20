@@ -8,13 +8,13 @@ import { useNotification } from '@web3uikit/core'
 
 const User = ({ verificationHandler, account }) => {
     return(
-        <Flex p='10' m='20' mx='20em' border='2px solid black' align={'center'} justify={'space-evenly'}>
+        <Flex p='10' m='20' mx='20em' border='2px solid lightgray' borderRadius={'14'} align={'center'} justify={'space-evenly'}>
             <Box>
-            <h1>Address {account.address}</h1>
-            <h2>Token {account.tokenId}</h2>
+            <Flex p='14'><Text color={'#404040'}>Address</Text>&nbsp;<Text><b>{account.address}</b></Text></Flex>
+            <Flex p='14'><Text color={'#404040'}>Token</Text>&nbsp;<Text><b>{account.tokenId}</b></Text></Flex>
             </Box>
             <Box>
-                <Button p='5' fontSize='20' onClick={() => verificationHandler(account.address, account.tokenId)}>Verify</Button>
+                <Button p='5' border={'none'} borderRadius={'50'} px='20' fontSize='18' backgroundColor={'lightgreen'} color={'#11111'} onClick={() => verificationHandler(account.address, account.tokenId)}>Verify</Button>
             </Box>
         </Flex>
     )
@@ -28,14 +28,77 @@ const UserList = ({ verificationHandler, accounts }) => {
     )
 }
 
-const SingleProposal = ({ index }) => {
-    return(
-        <Box>
-            <Text>Single proposal of index {index}</Text>
+const SingleProposal = ({ index, handleBack }) => {
+    const [title, setTitle] = useState('Loading...')
+    const [desc, setDesc] = useState('Loading...');
+    const [loc, setLoc] = useState('Loading...');
+    const [votes, setVotes] = useState('Loading...');
+    const [resolved, setResolved] = useState(false);
+    const [contract, setContract] = useState(null);
+    const [address, setAddress] = useState(null);
+    const dispatch = useNotification();
+    const [phone, setPhone] = useState('');
+
+    const voteHandler = async () => {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const temp = new ethers.Contract('dai.tokens.ethers.eth', PROPOSAL_ABI, signer);
+        const contract = temp.attach(PROPOSAL_ADDRESS);
+        try{
+            await contract?.voteForProposal(index);
+            dispatch({
+                type: 'success',
+                title: 'Vote successfull!',
+                message: 'Voted sucessfully!',
+                position: 'topR'
+            })
+        } catch (err) {
+            dispatch({
+                type: 'error',
+                title: 'Vote unsuccessfull!',
+                message: 'Already Voted!',
+                position: 'topR'
+            })
+        }
+    }
+
+    const populateData = async () => {
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        setAddress(address);
+        const temp = new ethers.Contract('dai.tokens.ethers.eth', PROPOSAL_ABI, signer);
+        const contract = temp.attach(PROPOSAL_ADDRESS);
+        const data = await contract.getProposal(index);
+        setVotes(String(data['1']));
+        setResolved(data['2']);
+        let details = data['3'];
+        let response = await fetch('https://ipfs.io/ipfs/'+details)
+        let jdetails = await response.json();
+        setTitle(jdetails['title'])
+        setDesc(jdetails['description'])
+        setLoc(jdetails['location'])
+        setPhone(jdetails['phone'])
+    }
+
+    useEffect(() => {
+        populateData()
+    }, [])
+
+    return (
+        <Box m='20' p='20' border='2px solid black'>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'}><b>{title}</b></Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color='grey'>Votes : {votes}</Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color='grey'>Location : {loc}</Text>
+            <Text fontSize='18' fontFamily={'Jetbrains Mono'} color={'grey'}>Phone : {phone}</Text>
+            <Text fontSize="18" fontFamily={'Jetbrains Mono'}>{desc}</Text>
+            <Flex align={'center'} my='20'>
+                <Button p='5' fontSize='18' mr='10' fontFamily={'Jetbrains Mono'} border={'none'} backgroundColor={'lightblue'} borderRadius={'50'} px='20' color={'#111111'} onClick={handleBack}>Back</Button>
+                <Button p='5' fontSize='18' ml='10' mr='10' fontFamily={'Jetbrains Mono'} border={'none'} backgroundColor={'lightblue'} borderRadius={'50'} px='20' color={'#11111'} onClick={voteHandler}>Vote</Button>
+            </Flex>
         </Box>
     )
 }
-
 const Proposal = ({ handleClick, contract, index }) => {
     const [title, setTitle] = useState('Loading...');
     const [desc, setDesc] = useState('Loading...');
@@ -78,24 +141,21 @@ const Proposal = ({ handleClick, contract, index }) => {
         }
     }
 
-    return(
-        <Box mx='100' onClick={() => handleClick(index)}>
-            <Flex mx='100' border='1px solid black' p='20' align={'center'} backgroundColor={resolved ? '#AAFF00' : '#FF474D'} m='20' justify={'space-evenly'}>
-                <Text fontSize="20">
-                    {title}
-                </Text>
-                <Spacer />
-                <Text fontSize='20'>
-                    {votes}
-                </Text>
-                { !resolved ? <Button m='5' p='5' mx='30' fontSize={'20'} backgroundColor={'#051C2C'} color={"white"} onClick={markResolved}>Mark Resolved</Button> : null}
-            </Flex>
-        </Box>
+    return (
+        <Flex onClick={() => handleClick(index)} px='20' py='20' m='20' mx='20em' border='2px solid lightgray' borderRadius={'14'} justify={'space-between'}>
+            <Box>
+                <Text>{title}</Text>
+                <Text color={'#404040'}>Votes <b>{votes}</b></Text>
+            </Box>
+            <Box>
+                <Button p='5' border={'none'} borderRadius={'50'} px='20' fontSize='18' backgroundColor={ resolved ? 'lightgreen' : '#fd5c63' } color={'#11111'} onClick={() => markResolved()}>{resolved ? 'Resolved' : 'Resolve'}</Button>
+            </Box>
+        </Flex>
     )
 }
 
 const ProposalList = ({ handleClick }) => {
-    const [contract, setContract] = useState([]);
+    const [contract, setContract] = useState(null);
 
     const allProducts = gql`
     {
@@ -115,7 +175,9 @@ const ProposalList = ({ handleClick }) => {
     }
 
     useEffect(() => {
-        populateContracts()
+        if(!contract){
+            populateContracts()
+        }
     }, [])
 
     const { loading, data, error } = useQuery(allProducts);
@@ -211,10 +273,10 @@ const VerifiedOfficial = ({ address }) => {
     return (
         <Box>
             <Center m='10' p='10'>
-                <Button backgroundColor={'#051C2C'} fontSize='20' color={'white'} m='20' p='10' onClick={() => {setShowUsers(true);setShowProposals(false);setSingleProposal(null)}}>Show Users</Button>
-                <Button backgroundColor={'#051C2C'}  fontSize='20' color={'white'} m='20' p='10' onClick={() => {setShowUsers(false); setShowProposals(true);setSingleProposal(null)}}>Show Proposals</Button>
+                <Button backgroundColor={'lightblue'} border={'none'} borderRadius={'50'} px='30' fontSize='20' color={'#11111'} m='20' py='10' onClick={() => {setShowUsers(true);setShowProposals(false);setSingleProposal(null)}}>Show Users</Button>
+                <Button backgroundColor={'lightblue'} border={'none'} borderRadius={'50'} px='30'  fontSize='20' color={'#11111'} m='20' py='10' onClick={() => {setShowUsers(false); setShowProposals(true);setSingleProposal(null)}}>Show Proposals</Button>
             </Center>
-            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : singleProposal ? <SingleProposal index={idx} /> : showUsers ?  checkUnverifiedUsers() : <ProposalList handleClick={(idx) => setSingleProposal(idx)} />}
+            {loading ? <Center><PuffLoader my='50' size={200} /></Center> : singleProposal ? <SingleProposal handleBack={() => setSingleProposal(null)} index={singleProposal} /> : showUsers ?  checkUnverifiedUsers() : <ProposalList handleClick={handleClick} />}
         </Box>
     )
 }
